@@ -26,6 +26,9 @@ mono_crash.*
 bin/
 obj/
 
+# Test results
+TestResults/
+
 # Build results
 [Dd]ebug/
 [Dd]ebugPublic/
