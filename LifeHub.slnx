@@ -3,4 +3,7 @@
   <Folder Name="/src/backend/">
     <Project Path="src/backend/LifeHub.Api/LifeHub.Api.csproj" />
   </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/LifeHub.Api.IntegrationTests/LifeHub.Api.IntegrationTests.csproj" />
+  </Folder>
 </Solution>

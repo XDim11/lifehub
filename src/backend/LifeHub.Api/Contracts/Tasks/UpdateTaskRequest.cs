@@ -3,7 +3,7 @@ using LifeHub.Api.Domain.Enums;
 
 namespace LifeHub.Api.Contracts.Tasks;
 
-public sealed record UpdateTaskRequest : IValidatableObject
+public sealed record UpdateTaskRequest
 {
     [Required(ErrorMessage = "El título es obligatorio.")]
     [StringLength(
@@ -39,16 +39,5 @@ public sealed record UpdateTaskRequest : IValidatableObject
 
     public DateTime? DueDate { get; init; }
 
-    public IEnumerable<ValidationResult> Validate(
-        ValidationContext validationContext
-    )
-    {
-        if (string.IsNullOrWhiteSpace(Title))
-        {
-            yield return new ValidationResult(
-                "El título no puede estar vacío.",
-                new[] { nameof(Title) }
-            );
-        }
-    }
+
 }
