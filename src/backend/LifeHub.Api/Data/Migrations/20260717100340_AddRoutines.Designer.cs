@@ -3,6 +3,7 @@ using System;
 using LifeHub.Api.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace LifeHub.Api.Data.Migrations
 {
     [DbContext(typeof(LifeHubDbContext))]
-    partial class LifeHubDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260717100340_AddRoutines")]
+    partial class AddRoutines
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "10.0.10");

@@ -1,8 +1,9 @@
 using LifeHub.Api.Domain.Enums;
+using LifeHub.Api.Domain.Common;
 
 namespace LifeHub.Api.Domain.Entities;
 
-public sealed class TaskItem
+public sealed class TaskItem : IAuditableEntity
 {
     public Guid Id { get; set; } = Guid.NewGuid();
 

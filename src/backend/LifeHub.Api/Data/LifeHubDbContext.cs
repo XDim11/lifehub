@@ -1,3 +1,4 @@
+using LifeHub.Api.Domain.Common;
 using LifeHub.Api.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
@@ -5,14 +6,23 @@ namespace LifeHub.Api.Data;
 
 public sealed class LifeHubDbContext : DbContext
 {
-    public LifeHubDbContext(DbContextOptions<LifeHubDbContext> options)
+    public LifeHubDbContext(
+        DbContextOptions<LifeHubDbContext> options
+    )
         : base(options)
     {
     }
 
     public DbSet<TaskItem> Tasks => Set<TaskItem>();
 
-    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    public DbSet<Routine> Routines => Set<Routine>();
+
+    public DbSet<RoutineCompletion> RoutineCompletions =>
+        Set<RoutineCompletion>();
+
+    protected override void OnModelCreating(
+        ModelBuilder modelBuilder
+    )
     {
         base.OnModelCreating(modelBuilder);
 
@@ -41,7 +51,10 @@ public sealed class LifeHubDbContext : DbContext
     {
         var utcNow = DateTime.UtcNow;
 
-        foreach (var entry in ChangeTracker.Entries<TaskItem>())
+        foreach (
+            var entry in ChangeTracker
+                .Entries<IAuditableEntity>()
+        )
         {
             if (entry.State == EntityState.Added)
             {
