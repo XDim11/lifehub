@@ -29,4 +29,16 @@ export const tasksApi = {
 
     return response.data
   },
+
+  async complete(id: string): Promise<TaskItem> {
+    const response = await http.patch<TaskItem>(
+      `/api/tasks/${id}/complete`,
+    )
+
+    return response.data
+  },
+
+  async delete(id: string): Promise<void> {
+    await http.delete(`/api/tasks/${id}`)
+  },
 }

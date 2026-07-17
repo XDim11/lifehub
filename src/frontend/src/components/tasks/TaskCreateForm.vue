@@ -27,7 +27,7 @@ const tasksStore = useTasksStore()
 
 const {
   saving,
-  mutationError,
+  createError,
 } = storeToRefs(tasksStore)
 
 const isOpen = ref(false)
@@ -88,7 +88,7 @@ const isValid = computed(
 )
 
 function openForm(): void {
-  tasksStore.clearMutationError()
+  tasksStore.clearCreateError()
   successMessage.value = null
   isOpen.value = true
 }
@@ -100,7 +100,7 @@ function closeForm(): void {
 
   isOpen.value = false
   submitted.value = false
-  tasksStore.clearMutationError()
+  tasksStore.clearCreateError()
 }
 
 function resetForm(): void {
@@ -115,7 +115,7 @@ function resetForm(): void {
 async function submitForm(): Promise<void> {
   submitted.value = true
   successMessage.value = null
-  tasksStore.clearMutationError()
+  tasksStore.clearCreateError()
 
   if (!isValid.value) {
     return
@@ -276,11 +276,11 @@ async function submitForm(): Promise<void> {
       </label>
 
       <div
-        v-if="mutationError"
+        v-if="createError"
         class="api-error"
         role="alert"
       >
-        {{ mutationError }}
+        {{ createError }}
       </div>
 
       <div class="form-actions">
