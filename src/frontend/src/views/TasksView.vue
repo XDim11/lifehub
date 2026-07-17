@@ -1,80 +1,83 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
-import { storeToRefs } from 'pinia'
-import { useTasksStore } from '@/stores/tasks'
-import TaskCreateForm from '@/components/tasks/TaskCreateForm.vue'
-import TaskCard from '@/components/tasks/TaskCard.vue'
-import type {
-  TaskItem,
-  TaskPriority,
-  TaskStatus,
-} from '@/types/task'
+import { computed, onMounted, ref } from "vue";
+import { storeToRefs } from "pinia";
+import { useTasksStore } from "@/stores/tasks";
+import TaskCreateForm from "@/components/tasks/TaskCreateForm.vue";
+import TaskCard from "@/components/tasks/TaskCard.vue";
+import TaskEditForm from "@/components/tasks/TaskEditForm.vue";
+import type { TaskItem, TaskPriority, TaskStatus } from "@/types/task";
 
-const tasksStore = useTasksStore()
+const tasksStore = useTasksStore();
 
-const {
-  tasks,
-  loading,
-  error,
-  actionError,
-  totalTasks,
-} = storeToRefs(tasksStore)
+const { tasks, loading, error, actionError, totalTasks } = storeToRefs(tasksStore);
 
-const search = ref('')
-const selectedStatus = ref<TaskStatus | ''>('')
-const selectedPriority = ref<TaskPriority | ''>('')
+const search = ref("");
+const selectedStatus = ref<TaskStatus | "">("");
+const selectedPriority = ref<TaskPriority | "">("");
+const selectedTask = ref<TaskItem | null>(null);
 
 const hasActiveFilters = computed(
   () =>
     search.value.trim().length > 0 ||
-    selectedStatus.value !== '' ||
-    selectedPriority.value !== '',
-)
+    selectedStatus.value !== "" ||
+    selectedPriority.value !== ""
+);
 
 async function loadTasks(): Promise<void> {
   await tasksStore.fetchTasks({
     search: search.value.trim() || undefined,
     status: selectedStatus.value || undefined,
-    priority:
-      selectedPriority.value || undefined,
-    sortBy: 'dueDate',
-  })
+    priority: selectedPriority.value || undefined,
+    sortBy: "dueDate",
+  });
 }
 
 async function clearFilters(): Promise<void> {
-  search.value = ''
-  selectedStatus.value = ''
-  selectedPriority.value = ''
+  search.value = "";
+  selectedStatus.value = "";
+  selectedPriority.value = "";
 
-  await loadTasks()
+  await loadTasks();
 }
-
 
 async function handleTaskCreated(): Promise<void> {
-  await loadTasks()
+  await loadTasks();
 }
 
-async function completeTask(
-  task: TaskItem,
-): Promise<void> {
-  await tasksStore.completeTask(task.id)
+async function completeTask(task: TaskItem): Promise<void> {
+  const completedTask = await tasksStore.completeTask(task.id);
+
+  if (completedTask) {
+    await loadTasks();
+  }
 }
 
-async function deleteTask(
-  task: TaskItem,
-): Promise<void> {
-  const confirmed = window.confirm(
-    `¿Seguro que quieres eliminar "${task.title}"?`,
-  )
+async function deleteTask(task: TaskItem): Promise<void> {
+  const confirmed = window.confirm(`¿Seguro que quieres eliminar "${task.title}"?`);
 
   if (!confirmed) {
-    return
+    return;
   }
 
-  await tasksStore.deleteTask(task.id)
+  await tasksStore.deleteTask(task.id);
 }
 
-onMounted(loadTasks)
+function openTaskEditor(task: TaskItem): void {
+  tasksStore.clearEditError();
+  selectedTask.value = task;
+}
+
+function closeTaskEditor(): void {
+  selectedTask.value = null;
+}
+
+async function handleTaskUpdated(): Promise<void> {
+  selectedTask.value = null;
+
+  await loadTasks();
+}
+
+onMounted(loadTasks);
 </script>
 
 <template>
@@ -83,35 +86,24 @@ onMounted(loadTasks)
       <div>
         <p class="eyebrow">LifeHub</p>
         <h1>Mis tareas</h1>
-        <p class="page-description">
-          Organiza y consulta tus tareas personales.
-        </p>
+        <p class="page-description">Organiza y consulta tus tareas personales.</p>
       </div>
 
       <div class="task-count">
         <strong>{{ totalTasks }}</strong>
         <span>
-          {{ totalTasks === 1 ? 'tarea' : 'tareas' }}
+          {{ totalTasks === 1 ? "tarea" : "tareas" }}
         </span>
       </div>
     </section>
 
-    <TaskCreateForm
-        @created="handleTaskCreated"
-    />
+    <TaskCreateForm @created="handleTaskCreated" />
 
-    <form
-      class="filters"
-      @submit.prevent="loadTasks"
-    >
+    <form class="filters" @submit.prevent="loadTasks">
       <label class="field search-field">
         <span>Buscar</span>
 
-        <input
-          v-model="search"
-          type="search"
-          placeholder="Título o descripción"
-        />
+        <input v-model="search" type="search" placeholder="Título o descripción" />
       </label>
 
       <label class="field">
@@ -119,18 +111,10 @@ onMounted(loadTasks)
 
         <select v-model="selectedStatus">
           <option value="">Todos</option>
-          <option value="pending">
-            Pendiente
-          </option>
-          <option value="inProgress">
-            En progreso
-          </option>
-          <option value="completed">
-            Completada
-          </option>
-          <option value="cancelled">
-            Cancelada
-          </option>
+          <option value="pending">Pendiente</option>
+          <option value="inProgress">En progreso</option>
+          <option value="completed">Completada</option>
+          <option value="cancelled">Cancelada</option>
         </select>
       </label>
 
@@ -142,15 +126,11 @@ onMounted(loadTasks)
           <option value="low">Baja</option>
           <option value="medium">Media</option>
           <option value="high">Alta</option>
-          <option value="urgent">
-            Urgente
-          </option>
+          <option value="urgent">Urgente</option>
         </select>
       </label>
 
-      <button class="primary-button" type="submit">
-        Aplicar filtros
-      </button>
+      <button class="primary-button" type="submit">Aplicar filtros</button>
 
       <button
         v-if="hasActiveFilters"
@@ -162,47 +142,26 @@ onMounted(loadTasks)
       </button>
     </form>
 
-    <div
-      v-if="actionError"
-      class="action-error"
-      role="alert"
-    >
-    <span>{{ actionError }}</span>
+    <div v-if="actionError" class="action-error" role="alert">
+      <span>{{ actionError }}</span>
 
-    <button
-        type="button"
-        @click="tasksStore.clearActionError"
-    >
-        Cerrar
-    </button>
+      <button type="button" @click="tasksStore.clearActionError">Cerrar</button>
     </div>
 
-    <p v-if="loading" class="status-message">
-      Cargando tareas...
-    </p>
+    <p v-if="loading" class="status-message">Cargando tareas...</p>
 
     <div v-else-if="error" class="error-message">
       <strong>No se pudieron cargar las tareas.</strong>
       <span>{{ error }}</span>
 
-      <button
-        class="secondary-button"
-        type="button"
-        @click="loadTasks"
-      >
+      <button class="secondary-button" type="button" @click="loadTasks">
         Reintentar
       </button>
     </div>
 
-    <div
-      v-else-if="tasks.length === 0"
-      class="empty-state"
-    >
+    <div v-else-if="tasks.length === 0" class="empty-state">
       <h2>No hay tareas</h2>
-      <p>
-        Todavía no existen tareas que coincidan con
-        los filtros seleccionados.
-      </p>
+      <p>Todavía no existen tareas que coincidan con los filtros seleccionados.</p>
     </div>
 
     <section v-else class="task-grid">
@@ -210,13 +169,20 @@ onMounted(loadTasks)
         v-for="task in tasks"
         :key="task.id"
         :task="task"
-        :processing="
-            tasksStore.isTaskProcessing(task.id)
-        "
+        :processing="tasksStore.isTaskProcessing(task.id)"
+        @edit="openTaskEditor(task)"
         @complete="completeTask(task)"
         @delete="deleteTask(task)"
-    />
+      />
     </section>
+
+    <TaskEditForm
+      v-if="selectedTask"
+      :key="selectedTask.id"
+      :task="selectedTask"
+      @close="closeTaskEditor"
+      @updated="handleTaskUpdated"
+    />
   </main>
 </template>
 
@@ -325,8 +291,7 @@ button {
 
 .task-grid {
   display: grid;
-  grid-template-columns:
-    repeat(auto-fill, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 20px;
 }
 
@@ -353,7 +318,6 @@ button {
   cursor: pointer;
   font-weight: 700;
 }
-
 
 .status-message,
 .empty-state,
@@ -402,9 +366,8 @@ button {
   }
 
   .action-error {
-  align-items: stretch;
-  flex-direction: column;
+    align-items: stretch;
+    flex-direction: column;
   }
-
 }
 </style>

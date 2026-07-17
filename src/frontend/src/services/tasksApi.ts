@@ -3,6 +3,7 @@ import type {
   CreateTaskRequest,
   TaskItem,
   TaskQueryParameters,
+  UpdateTaskRequest,
 } from '@/types/task'
 
 export const tasksApi = {
@@ -24,6 +25,18 @@ export const tasksApi = {
   ): Promise<TaskItem> {
     const response = await http.post<TaskItem>(
       '/api/tasks',
+      request,
+    )
+
+    return response.data
+  },
+
+  async update(
+    id: string,
+    request: UpdateTaskRequest,
+  ): Promise<TaskItem> {
+    const response = await http.put<TaskItem>(
+      `/api/tasks/${id}`,
       request,
     )
 

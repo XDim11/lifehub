@@ -5,6 +5,7 @@ import type {
   CreateTaskRequest,
   TaskItem,
   TaskQueryParameters,
+  UpdateTaskRequest,
 } from '@/types/task'
 
 interface ValidationProblemDetails {
@@ -19,6 +20,7 @@ interface TasksState {
   processingTaskIds: string[]
   error: string | null
   createError: string | null
+  editError: string | null
   actionError: string | null
 }
 
@@ -52,6 +54,7 @@ export const useTasksStore = defineStore('tasks', {
     processingTaskIds: [],
     error: null,
     createError: null,
+    editError: null,
     actionError: null,
   }),
 
@@ -111,6 +114,37 @@ export const useTasksStore = defineStore('tasks', {
       } finally {
         this.saving = false
       }
+    },
+
+    async updateTask(
+        taskId: string,
+        request: UpdateTaskRequest,
+    ): Promise<TaskItem | null> {
+        this.editError = null
+        this.startTaskProcessing(taskId)
+
+        try {
+            const updatedTask = await tasksApi.update(
+            taskId,
+            request,
+            )
+
+            const taskIndex = this.tasks.findIndex(
+            (task) => task.id === taskId,
+            )
+
+            if (taskIndex !== -1) {
+                this.tasks[taskIndex] = updatedTask
+            }
+
+            return updatedTask
+        } catch (error: unknown) {
+            this.editError = getApiErrorMessage(error)
+
+            return null
+        } finally {
+            this.stopTaskProcessing(taskId)
+        }
     },
 
     async completeTask(
@@ -185,6 +219,10 @@ export const useTasksStore = defineStore('tasks', {
 
     clearActionError(): void {
       this.actionError = null
+    },
+
+    clearEditError(): void {
+        this.editError = null
     },
   },
 })
