@@ -91,6 +91,7 @@ function canComplete(status: TaskStatus): boolean {
       <div class="task-state-action">
         <button
           v-if="canComplete(task.status)"
+          data-testid="complete-task"
           class="complete-button"
           type="button"
           :disabled="processing"
@@ -108,6 +109,7 @@ function canComplete(status: TaskStatus): boolean {
 
       <div class="secondary-actions">
         <button
+          data-testid="edit-task"
           class="edit-button"
           type="button"
           :disabled="processing"
@@ -117,6 +119,7 @@ function canComplete(status: TaskStatus): boolean {
         </button>
 
         <button
+          data-testid="delete-task"
           class="delete-button"
           type="button"
           :disabled="processing"
