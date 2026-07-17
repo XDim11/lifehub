@@ -15,16 +15,38 @@ import { useTasksStore } from '@/stores/tasks'
 import type {
     CreateTaskRequest,
     TaskItem,
+    TaskQueryParameters,
     UpdateTaskRequest,
 } from '@/types/task'
 
 vi.mock('@/services/tasksApi', () => ({
     tasksApi: {
-        getAll: vi.fn(),
-        create: vi.fn(),
-        update: vi.fn(),
-        complete: vi.fn(),
-        delete: vi.fn(),
+        getAll: vi.fn<
+            (
+                parameters?: TaskQueryParameters,
+            ) => Promise<TaskItem[]>
+        >(),
+
+        create: vi.fn<
+            (
+                request: CreateTaskRequest,
+            ) => Promise<TaskItem>
+        >(),
+
+        update: vi.fn<
+            (
+                id: string,
+                request: UpdateTaskRequest,
+            ) => Promise<TaskItem>
+        >(),
+
+        complete: vi.fn<
+            (id: string) => Promise<TaskItem>
+        >(),
+
+        delete: vi.fn<
+            (id: string) => Promise<void>
+        >(),
     },
 }))
 
