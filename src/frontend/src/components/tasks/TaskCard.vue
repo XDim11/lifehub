@@ -1,82 +1,68 @@
 <script setup lang="ts">
-import type {
-  TaskItem,
-  TaskPriority,
-  TaskStatus,
-} from '@/types/task'
+import type { TaskItem, TaskPriority, TaskStatus } from "@/types/task";
 
 withDefaults(
   defineProps<{
-    task: TaskItem
-    processing?: boolean
+    task: TaskItem;
+    processing?: boolean;
   }>(),
   {
     processing: false,
-  },
-)
+  }
+);
 
 defineEmits<{
-  complete: []
-  delete: []
-}>()
+  edit: [];
+  complete: [];
+  delete: [];
+}>();
 
 function formatDate(date: string | null): string {
   if (!date) {
-    return 'Sin fecha límite'
+    return "Sin fecha límite";
   }
 
-  return new Intl.DateTimeFormat('es-ES', {
-    dateStyle: 'medium',
-    timeStyle: 'short',
-  }).format(new Date(date))
+  return new Intl.DateTimeFormat("es-ES", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(new Date(date));
 }
 
 function getStatusLabel(status: TaskStatus): string {
   const labels: Record<TaskStatus, string> = {
-    pending: 'Pendiente',
-    inProgress: 'En progreso',
-    completed: 'Completada',
-    cancelled: 'Cancelada',
-  }
+    pending: "Pendiente",
+    inProgress: "En progreso",
+    completed: "Completada",
+    cancelled: "Cancelada",
+  };
 
-  return labels[status]
+  return labels[status];
 }
 
-function getPriorityLabel(
-  priority: TaskPriority,
-): string {
+function getPriorityLabel(priority: TaskPriority): string {
   const labels: Record<TaskPriority, string> = {
-    low: 'Baja',
-    medium: 'Media',
-    high: 'Alta',
-    urgent: 'Urgente',
-  }
+    low: "Baja",
+    medium: "Media",
+    high: "Alta",
+    urgent: "Urgente",
+  };
 
-  return labels[priority]
+  return labels[priority];
 }
 
 function canComplete(status: TaskStatus): boolean {
-  return (
-    status === 'pending' ||
-    status === 'inProgress'
-  )
+  return status === "pending" || status === "inProgress";
 }
 </script>
 
 <template>
   <article class="task-card">
     <header class="task-card-header">
-      <span
-        class="priority-badge"
-        :data-priority="task.priority"
-      >
+      <span class="priority-badge" :data-priority="task.priority">
         {{ getPriorityLabel(task.priority) }}
       </span>
 
-      <span
-        class="status-badge"
-        :data-status="task.status"
-      >
+      <span class="status-badge" :data-status="task.status">
         {{ getStatusLabel(task.status) }}
       </span>
     </header>
@@ -88,14 +74,12 @@ function canComplete(status: TaskStatus): boolean {
         {{ task.description }}
       </p>
 
-      <p v-else class="muted">
-        Sin descripción
-      </p>
+      <p v-else class="muted">Sin descripción</p>
     </div>
 
     <div class="task-information">
       <span>
-        {{ task.category ?? 'Sin categoría' }}
+        {{ task.category ?? "Sin categoría" }}
       </span>
 
       <time :datetime="task.dueDate ?? undefined">
@@ -104,39 +88,43 @@ function canComplete(status: TaskStatus): boolean {
     </div>
 
     <footer class="task-actions">
-      <button
-        v-if="canComplete(task.status)"
-        class="complete-button"
-        type="button"
-        :disabled="processing"
-        @click="$emit('complete')"
-      >
-        {{
-          processing
-            ? 'Procesando...'
-            : 'Completar'
-        }}
-      </button>
+      <div class="task-state-action">
+        <button
+          v-if="canComplete(task.status)"
+          class="complete-button"
+          type="button"
+          :disabled="processing"
+          @click="$emit('complete')"
+        >
+          {{ processing ? "Procesando..." : "Completar" }}
+        </button>
 
-      <span
-        v-else-if="task.status === 'completed'"
-        class="completed-message"
-      >
-        Tarea completada
-      </span>
+        <span v-else-if="task.status === 'completed'" class="completed-message">
+          Tarea completada
+        </span>
 
-      <span v-else class="cancelled-message">
-        Tarea cancelada
-      </span>
+        <span v-else class="cancelled-message"> Tarea cancelada </span>
+      </div>
 
-      <button
-        class="delete-button"
-        type="button"
-        :disabled="processing"
-        @click="$emit('delete')"
-      >
-        Eliminar
-      </button>
+      <div class="secondary-actions">
+        <button
+          class="edit-button"
+          type="button"
+          :disabled="processing"
+          @click="$emit('edit')"
+        >
+          Editar
+        </button>
+
+        <button
+          class="delete-button"
+          type="button"
+          :disabled="processing"
+          @click="$emit('delete')"
+        >
+          Eliminar
+        </button>
+      </div>
     </footer>
   </article>
 </template>
@@ -161,6 +149,19 @@ function canComplete(status: TaskStatus): boolean {
   gap: 12px;
 }
 
+.task-state-action,
+.secondary-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.edit-button {
+  border: 1px solid #c8cdd5;
+  background: #ffffff;
+  color: #18181b;
+}
+
 .priority-badge,
 .status-badge {
   padding: 5px 9px;
@@ -173,22 +174,22 @@ function canComplete(status: TaskStatus): boolean {
   background: #f1f3f5;
 }
 
-.priority-badge[data-priority='urgent'] {
+.priority-badge[data-priority="urgent"] {
   background: #fee2e2;
   color: #991b1b;
 }
 
-.priority-badge[data-priority='high'] {
+.priority-badge[data-priority="high"] {
   background: #ffedd5;
   color: #9a3412;
 }
 
-.priority-badge[data-priority='medium'] {
+.priority-badge[data-priority="medium"] {
   background: #fef3c7;
   color: #92400e;
 }
 
-.priority-badge[data-priority='low'] {
+.priority-badge[data-priority="low"] {
   background: #dcfce7;
   color: #166534;
 }
@@ -198,12 +199,12 @@ function canComplete(status: TaskStatus): boolean {
   color: #3730a3;
 }
 
-.status-badge[data-status='completed'] {
+.status-badge[data-status="completed"] {
   background: #dcfce7;
   color: #166534;
 }
 
-.status-badge[data-status='cancelled'] {
+.status-badge[data-status="cancelled"] {
   background: #f1f5f9;
   color: #475569;
 }
@@ -286,6 +287,15 @@ function canComplete(status: TaskStatus): boolean {
 
   .task-actions button {
     width: 100%;
+  }
+
+  .task-state-action,
+  .secondary-actions {
+    width: 100%;
+  }
+
+  .secondary-actions button {
+    flex: 1;
   }
 }
 </style>

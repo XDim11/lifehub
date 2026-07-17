@@ -44,3 +44,12 @@ export interface CreateTaskRequest {
   category?: string | null
   dueDate?: string | null
 }
+
+export interface UpdateTaskRequest {
+  title: string
+  description?: string | null
+  status: TaskStatus
+  priority: TaskPriority
+  category?: string | null
+  dueDate?: string | null
+}
