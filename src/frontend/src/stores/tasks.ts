@@ -16,8 +16,10 @@ interface TasksState {
   tasks: TaskItem[]
   loading: boolean
   saving: boolean
+  processingTaskIds: string[]
   error: string | null
-  mutationError: string | null
+  createError: string | null
+  actionError: string | null
 }
 
 function getApiErrorMessage(error: unknown): string {
@@ -47,8 +49,10 @@ export const useTasksStore = defineStore('tasks', {
     tasks: [],
     loading: false,
     saving: false,
+    processingTaskIds: [],
     error: null,
-    mutationError: null,
+    createError: null,
+    actionError: null,
   }),
 
   getters: {
@@ -63,6 +67,11 @@ export const useTasksStore = defineStore('tasks', {
       state.tasks.filter(
         (task) => task.status === 'completed',
       ),
+
+    isTaskProcessing:
+      (state) =>
+      (taskId: string): boolean =>
+        state.processingTaskIds.includes(taskId),
   },
 
   actions: {
@@ -85,7 +94,7 @@ export const useTasksStore = defineStore('tasks', {
       request: CreateTaskRequest,
     ): Promise<TaskItem | null> {
       this.saving = true
-      this.mutationError = null
+      this.createError = null
 
       try {
         const createdTask =
@@ -95,7 +104,7 @@ export const useTasksStore = defineStore('tasks', {
 
         return createdTask
       } catch (error: unknown) {
-        this.mutationError =
+        this.createError =
           getApiErrorMessage(error)
 
         return null
@@ -104,8 +113,78 @@ export const useTasksStore = defineStore('tasks', {
       }
     },
 
-    clearMutationError(): void {
-      this.mutationError = null
+    async completeTask(
+      taskId: string,
+    ): Promise<TaskItem | null> {
+      this.actionError = null
+      this.startTaskProcessing(taskId)
+
+      try {
+        const completedTask =
+          await tasksApi.complete(taskId)
+
+        const taskIndex = this.tasks.findIndex(
+          (task) => task.id === taskId,
+        )
+
+        if (taskIndex !== -1) {
+          this.tasks[taskIndex] = completedTask
+        }
+
+        return completedTask
+      } catch (error: unknown) {
+        this.actionError =
+          getApiErrorMessage(error)
+
+        return null
+      } finally {
+        this.stopTaskProcessing(taskId)
+      }
+    },
+
+    async deleteTask(
+      taskId: string,
+    ): Promise<boolean> {
+      this.actionError = null
+      this.startTaskProcessing(taskId)
+
+      try {
+        await tasksApi.delete(taskId)
+
+        this.tasks = this.tasks.filter(
+          (task) => task.id !== taskId,
+        )
+
+        return true
+      } catch (error: unknown) {
+        this.actionError =
+          getApiErrorMessage(error)
+
+        return false
+      } finally {
+        this.stopTaskProcessing(taskId)
+      }
+    },
+
+    startTaskProcessing(taskId: string): void {
+      if (!this.processingTaskIds.includes(taskId)) {
+        this.processingTaskIds.push(taskId)
+      }
+    },
+
+    stopTaskProcessing(taskId: string): void {
+      this.processingTaskIds =
+        this.processingTaskIds.filter(
+          (id) => id !== taskId,
+        )
+    },
+
+    clearCreateError(): void {
+      this.createError = null
+    },
+
+    clearActionError(): void {
+      this.actionError = null
     },
   },
 })

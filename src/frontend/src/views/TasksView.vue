@@ -3,7 +3,9 @@ import { computed, onMounted, ref } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useTasksStore } from '@/stores/tasks'
 import TaskCreateForm from '@/components/tasks/TaskCreateForm.vue'
+import TaskCard from '@/components/tasks/TaskCard.vue'
 import type {
+  TaskItem,
   TaskPriority,
   TaskStatus,
 } from '@/types/task'
@@ -14,6 +16,7 @@ const {
   tasks,
   loading,
   error,
+  actionError,
   totalTasks,
 } = storeToRefs(tasksStore)
 
@@ -46,43 +49,29 @@ async function clearFilters(): Promise<void> {
   await loadTasks()
 }
 
-function formatDate(date: string | null): string {
-  if (!date) {
-    return 'Sin fecha límite'
-  }
-
-  return new Intl.DateTimeFormat('es-ES', {
-    dateStyle: 'medium',
-    timeStyle: 'short',
-  }).format(new Date(date))
-}
-
-function getStatusLabel(status: TaskStatus): string {
-  const labels: Record<TaskStatus, string> = {
-    pending: 'Pendiente',
-    inProgress: 'En progreso',
-    completed: 'Completada',
-    cancelled: 'Cancelada',
-  }
-
-  return labels[status]
-}
-
-function getPriorityLabel(
-  priority: TaskPriority,
-): string {
-  const labels: Record<TaskPriority, string> = {
-    low: 'Baja',
-    medium: 'Media',
-    high: 'Alta',
-    urgent: 'Urgente',
-  }
-
-  return labels[priority]
-}
 
 async function handleTaskCreated(): Promise<void> {
   await loadTasks()
+}
+
+async function completeTask(
+  task: TaskItem,
+): Promise<void> {
+  await tasksStore.completeTask(task.id)
+}
+
+async function deleteTask(
+  task: TaskItem,
+): Promise<void> {
+  const confirmed = window.confirm(
+    `¿Seguro que quieres eliminar "${task.title}"?`,
+  )
+
+  if (!confirmed) {
+    return
+  }
+
+  await tasksStore.deleteTask(task.id)
 }
 
 onMounted(loadTasks)
@@ -173,6 +162,21 @@ onMounted(loadTasks)
       </button>
     </form>
 
+    <div
+      v-if="actionError"
+      class="action-error"
+      role="alert"
+    >
+    <span>{{ actionError }}</span>
+
+    <button
+        type="button"
+        @click="tasksStore.clearActionError"
+    >
+        Cerrar
+    </button>
+    </div>
+
     <p v-if="loading" class="status-message">
       Cargando tareas...
     </p>
@@ -202,49 +206,16 @@ onMounted(loadTasks)
     </div>
 
     <section v-else class="task-grid">
-      <article
+      <TaskCard
         v-for="task in tasks"
         :key="task.id"
-        class="task-card"
-      >
-        <header class="task-card-header">
-          <span
-            class="priority-badge"
-            :data-priority="task.priority"
-          >
-            {{ getPriorityLabel(task.priority) }}
-          </span>
-
-          <span
-            class="status-badge"
-            :data-status="task.status"
-          >
-            {{ getStatusLabel(task.status) }}
-          </span>
-        </header>
-
-        <div class="task-content">
-          <h2>{{ task.title }}</h2>
-
-          <p v-if="task.description">
-            {{ task.description }}
-          </p>
-
-          <p v-else class="muted">
-            Sin descripción
-          </p>
-        </div>
-
-        <footer class="task-footer">
-          <span>
-            {{ task.category ?? 'Sin categoría' }}
-          </span>
-
-          <time :datetime="task.dueDate ?? undefined">
-            {{ formatDate(task.dueDate) }}
-          </time>
-        </footer>
-      </article>
+        :task="task"
+        :processing="
+            tasksStore.isTaskProcessing(task.id)
+        "
+        @complete="completeTask(task)"
+        @delete="deleteTask(task)"
+    />
     </section>
   </main>
 </template>
@@ -359,86 +330,30 @@ button {
   gap: 20px;
 }
 
-.task-card {
-  display: flex;
-  flex-direction: column;
-  min-height: 230px;
-  padding: 20px;
-  border: 1px solid #d9dde3;
-  border-radius: 16px;
-  background: #ffffff;
-}
-
-.task-card-header,
-.task-footer {
+.action-error {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 12px;
-}
-
-.priority-badge,
-.status-badge {
-  padding: 5px 9px;
-  border-radius: 999px;
-  font-size: 0.75rem;
-  font-weight: 700;
-}
-
-.priority-badge {
-  background: #f1f3f5;
-}
-
-.priority-badge[data-priority='urgent'] {
-  background: #fee2e2;
+  gap: 16px;
+  padding: 14px 16px;
+  margin-bottom: 24px;
+  border: 1px solid #fca5a5;
+  border-radius: 12px;
+  background: #fef2f2;
   color: #991b1b;
 }
 
-.priority-badge[data-priority='high'] {
-  background: #ffedd5;
-  color: #9a3412;
+.action-error button {
+  min-height: 36px;
+  padding: 0 12px;
+  border: 1px solid #fca5a5;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #991b1b;
+  cursor: pointer;
+  font-weight: 700;
 }
 
-.priority-badge[data-priority='medium'] {
-  background: #fef3c7;
-  color: #92400e;
-}
-
-.priority-badge[data-priority='low'] {
-  background: #dcfce7;
-  color: #166534;
-}
-
-.status-badge {
-  background: #e0e7ff;
-  color: #3730a3;
-}
-
-.task-content {
-  flex: 1;
-  padding: 24px 0;
-}
-
-.task-content h2 {
-  margin: 0 0 10px;
-  font-size: 1.2rem;
-}
-
-.task-content p {
-  margin: 0;
-  line-height: 1.6;
-}
-
-.muted {
-  opacity: 0.55;
-}
-
-.task-footer {
-  padding-top: 16px;
-  border-top: 1px solid #eceef1;
-  font-size: 0.8rem;
-  opacity: 0.75;
-}
 
 .status-message,
 .empty-state,
@@ -486,9 +401,10 @@ button {
     grid-column: auto;
   }
 
-  .task-footer {
-    align-items: flex-start;
-    flex-direction: column;
+  .action-error {
+  align-items: stretch;
+  flex-direction: column;
   }
+
 }
 </style>
