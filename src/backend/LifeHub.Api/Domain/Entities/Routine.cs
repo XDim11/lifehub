@@ -37,4 +37,41 @@ public sealed class Routine : IAuditableEntity
         get;
         set;
     } = new List<RoutineCompletion>();
+
+    public bool IsScheduledOn(DateOnly date)
+    {
+        if (date < StartDate)
+        {
+            return false;
+        }
+
+        if (EndDate.HasValue && date > EndDate.Value)
+        {
+            return false;
+        }
+
+        if (Frequency == RoutineFrequency.Daily)
+        {
+            return true;
+        }
+
+        if (Frequency != RoutineFrequency.Weekly)
+        {
+            return false;
+        }
+
+        var routineDay = date.DayOfWeek switch
+        {
+            DayOfWeek.Monday => RoutineDays.Monday,
+            DayOfWeek.Tuesday => RoutineDays.Tuesday,
+            DayOfWeek.Wednesday => RoutineDays.Wednesday,
+            DayOfWeek.Thursday => RoutineDays.Thursday,
+            DayOfWeek.Friday => RoutineDays.Friday,
+            DayOfWeek.Saturday => RoutineDays.Saturday,
+            DayOfWeek.Sunday => RoutineDays.Sunday,
+            _ => RoutineDays.None
+        };
+
+        return DaysOfWeek.HasFlag(routineDay);
+    }
 }
