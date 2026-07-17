@@ -12,6 +12,7 @@
     "build-only": "vite build",
     "type-check": "vue-tsc --build",
     "lint": "run-s lint:*",
+    "lint:check": "eslint . && oxlint .",
     "lint:eslint": "eslint . --fix",
     "lint:oxlint": "oxlint . --fix",
     "format": "prettier --write src/"
