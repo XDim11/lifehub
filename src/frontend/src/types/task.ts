@@ -36,3 +36,11 @@ export interface TaskQueryParameters {
   sortBy?: TaskSortBy
   descending?: boolean
 }
+
+export interface CreateTaskRequest {
+  title: string
+  description?: string | null
+  priority: TaskPriority
+  category?: string | null
+  dueDate?: string | null
+}

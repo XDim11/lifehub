@@ -2,6 +2,7 @@
 import { computed, onMounted, ref } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useTasksStore } from '@/stores/tasks'
+import TaskCreateForm from '@/components/tasks/TaskCreateForm.vue'
 import type {
   TaskPriority,
   TaskStatus,
@@ -80,6 +81,10 @@ function getPriorityLabel(
   return labels[priority]
 }
 
+async function handleTaskCreated(): Promise<void> {
+  await loadTasks()
+}
+
 onMounted(loadTasks)
 </script>
 
@@ -101,6 +106,10 @@ onMounted(loadTasks)
         </span>
       </div>
     </section>
+
+    <TaskCreateForm
+        @created="handleTaskCreated"
+    />
 
     <form
       class="filters"
