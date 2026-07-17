@@ -1,149 +1,128 @@
 <script setup lang="ts">
-import { computed, reactive, ref } from 'vue'
-import { storeToRefs } from 'pinia'
-import { useTasksStore } from '@/stores/tasks'
-import type {
-  CreateTaskRequest,
-  TaskItem,
-  TaskPriority,
-} from '@/types/task'
+import { computed, reactive, ref } from "vue";
+import { storeToRefs } from "pinia";
+import { useTasksStore } from "@/stores/tasks";
+import type { CreateTaskRequest, TaskItem, TaskPriority } from "@/types/task";
 
 interface TaskFormState {
-  title: string
-  description: string
-  priority: TaskPriority
-  category: string
-  dueDate: string
+  title: string;
+  description: string;
+  priority: TaskPriority;
+  category: string;
+  dueDate: string;
 }
 
 const emit = defineEmits<{
-  (
-    event: 'created',
-    task: TaskItem,
-  ): void
-}>()
+  (event: "created", task: TaskItem): void;
+}>();
 
-const tasksStore = useTasksStore()
+const tasksStore = useTasksStore();
 
-const {
-  saving,
-  createError,
-} = storeToRefs(tasksStore)
+const { saving, createError } = storeToRefs(tasksStore);
 
-const isOpen = ref(false)
-const submitted = ref(false)
-const successMessage = ref<string | null>(null)
+const isOpen = ref(false);
+const submitted = ref(false);
+const successMessage = ref<string | null>(null);
 
 const form = reactive<TaskFormState>({
-  title: '',
-  description: '',
-  priority: 'medium',
-  category: '',
-  dueDate: '',
-})
+  title: "",
+  description: "",
+  priority: "medium",
+  category: "",
+  dueDate: "",
+});
 
 const titleError = computed(() => {
   if (!submitted.value) {
-    return null
+    return null;
   }
 
   if (!form.title.trim()) {
-    return 'El título es obligatorio.'
+    return "El título es obligatorio.";
   }
 
   if (form.title.trim().length > 150) {
-    return 'El título no puede superar los 150 caracteres.'
+    return "El título no puede superar los 150 caracteres.";
   }
 
-  return null
-})
+  return null;
+});
 
 const descriptionError = computed(() => {
-  if (
-    submitted.value &&
-    form.description.length > 1000
-  ) {
-    return 'La descripción no puede superar los 1000 caracteres.'
+  if (submitted.value && form.description.length > 1000) {
+    return "La descripción no puede superar los 1000 caracteres.";
   }
 
-  return null
-})
+  return null;
+});
 
 const categoryError = computed(() => {
-  if (
-    submitted.value &&
-    form.category.length > 80
-  ) {
-    return 'La categoría no puede superar los 80 caracteres.'
+  if (submitted.value && form.category.length > 80) {
+    return "La categoría no puede superar los 80 caracteres.";
   }
 
-  return null
-})
+  return null;
+});
 
 const isValid = computed(
   () =>
     titleError.value === null &&
     descriptionError.value === null &&
-    categoryError.value === null,
-)
+    categoryError.value === null
+);
 
 function openForm(): void {
-  tasksStore.clearCreateError()
-  successMessage.value = null
-  isOpen.value = true
+  tasksStore.clearCreateError();
+  successMessage.value = null;
+  isOpen.value = true;
 }
 
 function closeForm(): void {
   if (saving.value) {
-    return
+    return;
   }
 
-  isOpen.value = false
-  submitted.value = false
-  tasksStore.clearCreateError()
+  isOpen.value = false;
+  submitted.value = false;
+  tasksStore.clearCreateError();
 }
 
 function resetForm(): void {
-  form.title = ''
-  form.description = ''
-  form.priority = 'medium'
-  form.category = ''
-  form.dueDate = ''
-  submitted.value = false
+  form.title = "";
+  form.description = "";
+  form.priority = "medium";
+  form.category = "";
+  form.dueDate = "";
+  submitted.value = false;
 }
 
 async function submitForm(): Promise<void> {
-  submitted.value = true
-  successMessage.value = null
-  tasksStore.clearCreateError()
+  submitted.value = true;
+  successMessage.value = null;
+  tasksStore.clearCreateError();
 
   if (!isValid.value) {
-    return
+    return;
   }
 
   const request: CreateTaskRequest = {
     title: form.title.trim(),
-    description:
-      form.description.trim() || null,
+    description: form.description.trim() || null,
     priority: form.priority,
     category: form.category.trim() || null,
-    dueDate: form.dueDate
-      ? new Date(form.dueDate).toISOString()
-      : null,
-  }
+    dueDate: form.dueDate ? new Date(form.dueDate).toISOString() : null,
+  };
 
-  const createdTask =
-    await tasksStore.createTask(request)
+  const createdTask = await tasksStore.createTask(request);
 
   if (!createdTask) {
-    return
+    return;
   }
 
-  successMessage.value =
-    `La tarea "${createdTask.title}" se ha creado.`
+  successMessage.value = `La tarea "${createdTask.title}" se ha creado.`;
 
-  resetForm()
-  emit('created', createdTask)
+  resetForm();
+  emit("created", createdTask);
 }
 </script>
 
@@ -152,13 +131,12 @@ async function submitForm(): Promise<void> {
     <div class="create-task-heading">
       <div>
         <h2>Nueva tarea</h2>
-        <p>
-          Añade una tarea a tu lista personal.
-        </p>
+        <p>Añade una tarea a tu lista personal.</p>
       </div>
 
       <button
         v-if="!isOpen"
+        data-testid="open-create-form"
         class="primary-button"
         type="button"
         @click="openForm"
@@ -167,16 +145,13 @@ async function submitForm(): Promise<void> {
       </button>
     </div>
 
-    <p
-      v-if="successMessage"
-      class="success-message"
-      role="status"
-    >
+    <p v-if="successMessage" class="success-message" role="status">
       {{ successMessage }}
     </p>
 
     <form
       v-if="isOpen"
+      data-testid="create-task-form"
       class="task-form"
       novalidate
       @submit.prevent="submitForm"
@@ -189,20 +164,15 @@ async function submitForm(): Promise<void> {
 
         <input
           v-model="form.title"
+          data-testid="create-title"
           type="text"
           maxlength="150"
           placeholder="Ej. Terminar el frontend"
           :aria-invalid="Boolean(titleError)"
-          :aria-describedby="
-            titleError ? 'title-error' : undefined
-          "
+          :aria-describedby="titleError ? 'title-error' : undefined"
         />
 
-        <small
-          v-if="titleError"
-          id="title-error"
-          class="field-error"
-        >
+        <small v-if="titleError" id="title-error" class="field-error">
           {{ titleError }}
         </small>
       </label>
@@ -212,36 +182,28 @@ async function submitForm(): Promise<void> {
 
         <textarea
           v-model="form.description"
+          data-testid="create-description"
           maxlength="1000"
           rows="4"
           placeholder="Añade más información"
-          :aria-invalid="
-            Boolean(descriptionError)
-          "
+          :aria-invalid="Boolean(descriptionError)"
         />
 
-        <small
-          v-if="descriptionError"
-          class="field-error"
-        >
+        <small v-if="descriptionError" class="field-error">
           {{ descriptionError }}
         </small>
 
-        <small class="character-count">
-          {{ form.description.length }}/1000
-        </small>
+        <small class="character-count"> {{ form.description.length }}/1000 </small>
       </label>
 
       <label class="field">
         <span>Prioridad</span>
 
-        <select v-model="form.priority">
+        <select v-model="form.priority" data-testid="create-priority">
           <option value="low">Baja</option>
           <option value="medium">Media</option>
           <option value="high">Alta</option>
-          <option value="urgent">
-            Urgente
-          </option>
+          <option value="urgent">Urgente</option>
         </select>
       </label>
 
@@ -250,18 +212,14 @@ async function submitForm(): Promise<void> {
 
         <input
           v-model="form.category"
+          data-testid="create-category"
           type="text"
           maxlength="80"
           placeholder="Ej. Programación"
-          :aria-invalid="
-            Boolean(categoryError)
-          "
+          :aria-invalid="Boolean(categoryError)"
         />
 
-        <small
-          v-if="categoryError"
-          class="field-error"
-        >
+        <small v-if="categoryError" class="field-error">
           {{ categoryError }}
         </small>
       </label>
@@ -269,17 +227,10 @@ async function submitForm(): Promise<void> {
       <label class="field">
         <span>Fecha límite</span>
 
-        <input
-          v-model="form.dueDate"
-          type="datetime-local"
-        />
+        <input v-model="form.dueDate" type="datetime-local" />
       </label>
 
-      <div
-        v-if="createError"
-        class="api-error"
-        role="alert"
-      >
+      <div v-if="createError" class="api-error" role="alert">
         {{ createError }}
       </div>
 
@@ -294,15 +245,12 @@ async function submitForm(): Promise<void> {
         </button>
 
         <button
+          data-testid="submit-create-task"
           class="primary-button"
           type="submit"
           :disabled="saving"
         >
-          {{
-            saving
-              ? 'Guardando...'
-              : 'Crear tarea'
-          }}
+          {{ saving ? "Guardando..." : "Crear tarea" }}
         </button>
       </div>
     </form>
@@ -392,8 +340,8 @@ textarea {
   resize: vertical;
 }
 
-input[aria-invalid='true'],
-textarea[aria-invalid='true'] {
+input[aria-invalid="true"],
+textarea[aria-invalid="true"] {
   border-color: #dc2626;
 }
 

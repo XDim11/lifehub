@@ -1,163 +1,137 @@
 <script setup lang="ts">
-import { computed, reactive, ref } from 'vue'
-import { storeToRefs } from 'pinia'
-import { useTasksStore } from '@/stores/tasks'
-import type {
-  TaskItem,
-  TaskPriority,
-  TaskStatus,
-  UpdateTaskRequest,
-} from '@/types/task'
+import { computed, reactive, ref } from "vue";
+import { storeToRefs } from "pinia";
+import { useTasksStore } from "@/stores/tasks";
+import type { TaskItem, TaskPriority, TaskStatus, UpdateTaskRequest } from "@/types/task";
 
 interface EditTaskFormState {
-  title: string
-  description: string
-  status: TaskStatus
-  priority: TaskPriority
-  category: string
-  dueDate: string
+  title: string;
+  description: string;
+  status: TaskStatus;
+  priority: TaskPriority;
+  category: string;
+  dueDate: string;
 }
 
 const props = defineProps<{
-  task: TaskItem
-}>()
+  task: TaskItem;
+}>();
 
 const emit = defineEmits<{
-  close: []
-  updated: [task: TaskItem]
-}>()
+  close: [];
+  updated: [task: TaskItem];
+}>();
 
-const tasksStore = useTasksStore()
-const { editError } = storeToRefs(tasksStore)
+const tasksStore = useTasksStore();
+const { editError } = storeToRefs(tasksStore);
 
-const submitted = ref(false)
+const submitted = ref(false);
 
 const form = reactive<EditTaskFormState>({
   title: props.task.title,
-  description: props.task.description ?? '',
+  description: props.task.description ?? "",
   status: props.task.status,
   priority: props.task.priority,
-  category: props.task.category ?? '',
+  category: props.task.category ?? "",
   dueDate: toLocalDateTime(props.task.dueDate),
-})
+});
 
-const processing = computed(() =>
-  tasksStore.isTaskProcessing(props.task.id),
-)
+const processing = computed(() => tasksStore.isTaskProcessing(props.task.id));
 
 const titleError = computed(() => {
   if (!submitted.value) {
-    return null
+    return null;
   }
 
-  const title = form.title.trim()
+  const title = form.title.trim();
 
   if (!title) {
-    return 'El título es obligatorio.'
+    return "El título es obligatorio.";
   }
 
   if (title.length > 150) {
-    return 'El título no puede superar los 150 caracteres.'
+    return "El título no puede superar los 150 caracteres.";
   }
 
-  return null
-})
+  return null;
+});
 
 const descriptionError = computed(() => {
-  if (
-    submitted.value &&
-    form.description.length > 1000
-  ) {
-    return 'La descripción no puede superar los 1000 caracteres.'
+  if (submitted.value && form.description.length > 1000) {
+    return "La descripción no puede superar los 1000 caracteres.";
   }
 
-  return null
-})
+  return null;
+});
 
 const categoryError = computed(() => {
-  if (
-    submitted.value &&
-    form.category.length > 80
-  ) {
-    return 'La categoría no puede superar los 80 caracteres.'
+  if (submitted.value && form.category.length > 80) {
+    return "La categoría no puede superar los 80 caracteres.";
   }
 
-  return null
-})
+  return null;
+});
 
 const formIsValid = computed(
   () =>
     titleError.value === null &&
     descriptionError.value === null &&
-    categoryError.value === null,
-)
+    categoryError.value === null
+);
 
-tasksStore.clearEditError()
+tasksStore.clearEditError();
 
-function toLocalDateTime(
-  dateValue: string | null,
-): string {
+function toLocalDateTime(dateValue: string | null): string {
   if (!dateValue) {
-    return ''
+    return "";
   }
 
-  const date = new Date(dateValue)
-  const timezoneOffset = date.getTimezoneOffset() * 60_000
-  const localDate = new Date(
-    date.getTime() - timezoneOffset,
-  )
+  const date = new Date(dateValue);
+  const timezoneOffset = date.getTimezoneOffset() * 60_000;
+  const localDate = new Date(date.getTime() - timezoneOffset);
 
-  return localDate.toISOString().slice(0, 16)
+  return localDate.toISOString().slice(0, 16);
 }
 
 function closeForm(): void {
   if (processing.value) {
-    return
+    return;
   }
 
-  tasksStore.clearEditError()
-  emit('close')
+  tasksStore.clearEditError();
+  emit("close");
 }
 
 async function submitForm(): Promise<void> {
-  submitted.value = true
-  tasksStore.clearEditError()
+  submitted.value = true;
+  tasksStore.clearEditError();
 
   if (!formIsValid.value) {
-    return
+    return;
   }
 
   const request: UpdateTaskRequest = {
     title: form.title.trim(),
-    description:
-      form.description.trim() || null,
+    description: form.description.trim() || null,
     status: form.status,
     priority: form.priority,
     category: form.category.trim() || null,
-    dueDate: form.dueDate
-      ? new Date(form.dueDate).toISOString()
-      : null,
-  }
+    dueDate: form.dueDate ? new Date(form.dueDate).toISOString() : null,
+  };
 
-  const updatedTask = await tasksStore.updateTask(
-    props.task.id,
-    request,
-  )
+  const updatedTask = await tasksStore.updateTask(props.task.id, request);
 
   if (!updatedTask) {
-    return
+    return;
   }
 
-  emit('updated', updatedTask)
+  emit("updated", updatedTask);
 }
 </script>
 
 <template>
   <Teleport to="body">
-    <div
-      class="modal-overlay"
-      @click.self="closeForm"
-    >
+    <div class="modal-overlay" @click.self="closeForm">
       <section
         class="modal"
         role="dialog"
@@ -184,6 +158,7 @@ async function submitForm(): Promise<void> {
         </header>
 
         <form
+          data-testid="edit-task-form"
           class="task-form"
           novalidate
           @submit.prevent="submitForm"
@@ -196,15 +171,13 @@ async function submitForm(): Promise<void> {
 
             <input
               v-model="form.title"
+              data-testid="edit-title"
               type="text"
               maxlength="150"
               :aria-invalid="Boolean(titleError)"
             />
 
-            <small
-              v-if="titleError"
-              class="field-error"
-            >
+            <small v-if="titleError" class="field-error">
               {{ titleError }}
             </small>
           </label>
@@ -214,54 +187,38 @@ async function submitForm(): Promise<void> {
 
             <textarea
               v-model="form.description"
+              data-testid="edit-description"
               maxlength="1000"
               rows="4"
-              :aria-invalid="
-                Boolean(descriptionError)
-              "
+              :aria-invalid="Boolean(descriptionError)"
             />
 
-            <small
-              v-if="descriptionError"
-              class="field-error"
-            >
+            <small v-if="descriptionError" class="field-error">
               {{ descriptionError }}
             </small>
 
-            <small class="character-count">
-              {{ form.description.length }}/1000
-            </small>
+            <small class="character-count"> {{ form.description.length }}/1000 </small>
           </label>
 
           <label class="field">
             <span>Estado</span>
 
-            <select v-model="form.status">
-              <option value="pending">
-                Pendiente
-              </option>
-              <option value="inProgress">
-                En progreso
-              </option>
-              <option value="completed">
-                Completada
-              </option>
-              <option value="cancelled">
-                Cancelada
-              </option>
+            <select v-model="form.status" data-testid="edit-status">
+              <option value="pending">Pendiente</option>
+              <option value="inProgress">En progreso</option>
+              <option value="completed">Completada</option>
+              <option value="cancelled">Cancelada</option>
             </select>
           </label>
 
           <label class="field">
             <span>Prioridad</span>
 
-            <select v-model="form.priority">
+            <select v-model="form.priority" data-testid="edit-priority">
               <option value="low">Baja</option>
               <option value="medium">Media</option>
               <option value="high">Alta</option>
-              <option value="urgent">
-                Urgente
-              </option>
+              <option value="urgent">Urgente</option>
             </select>
           </label>
 
@@ -270,18 +227,14 @@ async function submitForm(): Promise<void> {
 
             <input
               v-model="form.category"
+              data-testid="edit-category"
               type="text"
               maxlength="80"
               placeholder="Sin categoría"
-              :aria-invalid="
-                Boolean(categoryError)
-              "
+              :aria-invalid="Boolean(categoryError)"
             />
 
-            <small
-              v-if="categoryError"
-              class="field-error"
-            >
+            <small v-if="categoryError" class="field-error">
               {{ categoryError }}
             </small>
           </label>
@@ -289,22 +242,16 @@ async function submitForm(): Promise<void> {
           <label class="field">
             <span>Fecha límite</span>
 
-            <input
-              v-model="form.dueDate"
-              type="datetime-local"
-            />
+            <input v-model="form.dueDate" type="datetime-local" />
           </label>
 
-          <div
-            v-if="editError"
-            class="api-error full-width"
-            role="alert"
-          >
+          <div v-if="editError" class="api-error full-width" role="alert">
             {{ editError }}
           </div>
 
           <footer class="form-actions full-width">
             <button
+              data-testid="close-edit-form"
               class="secondary-button"
               type="button"
               :disabled="processing"
@@ -314,15 +261,12 @@ async function submitForm(): Promise<void> {
             </button>
 
             <button
+              data-testid="submit-edit-task"
               class="primary-button"
               type="submit"
               :disabled="processing"
             >
-              {{
-                processing
-                  ? 'Guardando...'
-                  : 'Guardar cambios'
-              }}
+              {{ processing ? "Guardando..." : "Guardar cambios" }}
             </button>
           </footer>
         </form>
@@ -438,8 +382,8 @@ textarea {
   resize: vertical;
 }
 
-input[aria-invalid='true'],
-textarea[aria-invalid='true'] {
+input[aria-invalid="true"],
+textarea[aria-invalid="true"] {
   border-color: #dc2626;
 }
 
